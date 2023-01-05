@@ -1,25 +1,15 @@
 import os
-import time
 import matplotlib.pyplot as plt
 from torch_geometric.loader import DataLoader
 from torch_geometric.datasets import Planetoid
-from torch_geometric.datasets import TUDataset
 import copy
 import pandas as pd
 from tqdm import trange
 import numpy as np
-import networkx as nx
 import torch.optim as optim
-from torch_geometric.utils import remove_self_loops, add_self_loops, softmax, degree
+from torch_geometric.utils import softmax
 from torch_geometric.nn.conv import MessagePassing
-from torch_sparse import SparseTensor, set_diag
-from torch.nn import Parameter, Linear
-from torch_geometric.typing import (OptPairTensor, Adj, Size, NoneType,
-                                    OptTensor)
-from typing import Union, Tuple, Optional
-from torch import Tensor
-import torch_geometric.utils as pyg_utils
-import torch_geometric.nn as pyg_nn
+from torch.nn import Parameter
 import torch.nn.functional as F
 import torch.nn as nn
 import torch_scatter
@@ -69,7 +59,7 @@ class GAT(MessagePassing):
         alpha_l = (w_l * self.att_l).sum(-1)
         alpha_r = (w_r * self.att_r).sum(-1)
 
-        out = self.propagate(edge_index, x=(w_l, w_r), alpha=(
+        out = self.propagate(edge_index=edge_index, x=(w_l, w_r), alpha=(
             alpha_l, alpha_r), dim_size=size).view(-1, H * C)
         # print("in forward:")
         # print(out.shape)
@@ -170,7 +160,7 @@ class GaAN(MessagePassing):
 
         out = out * g_i.view(-1, H, 1)
         out = out.view(-1, H * C)
-        # 拼接上了本层的数据x，不太清楚是否有必要
+        # 拼接上了本层的数据x，假定是要这么做吧
         out_cat = torch.cat((x.T, out.T)).T
         out_cat = self.final_lin(out_cat)
         # print("in forward:")
